@@ -12,7 +12,7 @@ Participants act as observers of the inbox of a fictional bank branch director i
 
 The interface is in Spanish (Spain), since the target sample is Spanish-speaking.
 
-An opening screen sets out the legal notice (fictional content, no data collection, educational use only) and the instructions, and participants must confirm they have read it before starting.
+An opening screen presents the participant information and informed consent, plus the instructions. Participants must confirm they are 18 or over and give consent before starting.
 
 For each of eight messages (email, WhatsApp, LinkedIn) participants:
 
@@ -42,7 +42,11 @@ Results also show mean legitimacy ratings by message type and data source, plus 
 - All people, organisations and messages are fictional.
 - Fraudulent messages reproduce patterns documented in real executive fraud (urgency, secrecy, channel switching, credential requests) without operational detail.
 - Legitimate messages also use public details, so that "contains public data" cannot be used as a shortcut for "fraud".
-- No data is stored on a server. Responses stay in the browser session and can be downloaded as CSV.
+- Responses are anonymous: each participant gets a random 12-character code and no identifying data is requested. Data is sent only after the last message, so participants who drop out leave no record.
+
+## Data collection
+
+On completion, the app posts one row per message (participant code, timestamp, position, stimulus, rating, action, response time) to a Google Sheet through a small Google Apps Script web app (`google_apps_script.gs`). The endpoint URL is kept in Streamlit secrets as `SHEET_ENDPOINT`, never in the repository. The long format (one row per participant and message) is ready for multilevel analysis.
 
 ## Limitations and next steps
 

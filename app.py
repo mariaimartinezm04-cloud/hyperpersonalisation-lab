@@ -8,7 +8,12 @@ legítimo (0-100) y eligen una acción. Al final se resume el rendimiento con
 medidas de la teoría de detección de señales (aciertos, falsas alarmas, d', c).
 """
 
+import json
 import random
+import time
+import urllib.request
+import uuid
+from datetime import datetime, timezone
 from statistics import NormalDist
 
 import pandas as pd
@@ -146,31 +151,37 @@ INTRO_CSS = """
 """
 
 INTRO_HTML = """
-<div class="hl-section"><div class="num">1</div><h3>Aviso legal</h3></div>
+<div class="hl-section"><div class="num">1</div><h3>Información y consentimiento</h3></div>
 <div class="hl-grid">
   <div class="hl-card">
-    <div class="title">Contenido ficticio</div>
-    <div class="body">Javier Ortega, el banco, los remitentes y todos los mensajes son inventados
-    con fines docentes y de investigación. Cualquier parecido con personas u organizaciones
-    reales es pura coincidencia.</div></div>
+    <div class="title">Qué es este estudio</div>
+    <div class="body">Una investigación de un Trabajo Fin de Grado del doble grado en Derecho y
+    Criminología de la Universidad Europea de Valencia sobre cómo juzgamos mensajes que usan
+    datos personales. Todas las personas, empresas y mensajes son ficticios.</div></div>
   <div class="hl-card">
-    <div class="title">Demostración educativa</div>
-    <div class="body">No es una herramienta de seguridad ni constituye asesoramiento profesional,
-    jurídico o financiero. Si recibes un mensaje sospechoso en la vida real, sigue los
-    procedimientos de tu organización y verifícalo por un canal independiente.</div></div>
+    <div class="title">Participación voluntaria</div>
+    <div class="body">Participar es voluntario y no tiene ninguna consecuencia no hacerlo.
+    Puedes dejarlo en cualquier momento cerrando la pestaña, y en ese caso no se guarda nada.
+    Es necesario tener 18 años o más.</div></div>
   <div class="hl-card">
-    <div class="title">Tus respuestas no salen de aquí</div>
-    <div class="body">No se te pide ningún dato personal y no se guarda ni se envía nada. Las
-    respuestas solo existen en esta sesión del navegador y desaparecen al cerrar la pestaña,
-    salvo que decidas descargarlas al final.</div></div>
+    <div class="title">Qué se guarda</div>
+    <div class="body">Solo tus respuestas (puntuaciones, acciones elegidas y tiempo de respuesta),
+    asociadas a un código aleatorio. No se te pide nombre, correo ni ningún otro dato que te
+    identifique. Las respuestas se envían al terminar el último mensaje.</div></div>
+  <div class="hl-card">
+    <div class="title">Para qué se usan</div>
+    <div class="body">Solo para el análisis estadístico de esta investigación y su posible
+    publicación académica, siempre de forma agregada. Como los datos son anónimos, una vez
+    enviados no es posible identificar ni retirar las respuestas de una persona concreta.</div></div>
   <div class="hl-card">
     <div class="title">Alojamiento</div>
     <div class="body">La aplicación funciona en Streamlit Community Cloud, que puede tratar datos
-    técnicos como tu dirección IP conforme a su propia política de privacidad.</div></div>
-  <div class="hl-card wide">
-    <div class="title">Autoría</div>
-    <div class="body">Diseño de la investigación y contenidos de Mar&iacute;a Mart&iacute;nez Melero.
-    No se permite reutilizar los estímulos sin autorización.</div></div>
+    técnicos como tu dirección IP conforme a su propia política de privacidad. Esos datos no
+    llegan a la investigadora.</div></div>
+  <div class="hl-card">
+    <div class="title">Contacto</div>
+    <div class="body">Investigadora responsable: Mar&iacute;a Mart&iacute;nez Melero, Universidad
+    Europea de Valencia. No es una herramienta de seguridad ni asesoramiento profesional.</div></div>
 </div>
 
 <div class="hl-section"><div class="num">2</div><h3>Cómo funciona</h3></div>
@@ -190,7 +201,7 @@ INTRO_HTML = """
     a 100 (seguro que es legítimo), y elige qué debería hacer Javier.</div></div>
   <div class="hl-step"><div class="dot">4</div>
     <div class="title">No se puede volver atrás</div>
-    <div class="body">Cuando pulses <i>Siguiente</i>, esa respuesta queda guardada, así que
+    <div class="body">Cuando pulses <i>Siguiente</i>, esa respuesta queda registrada, así que
     tómate tu tiempo.</div></div>
   <div class="hl-step"><div class="dot">5</div>
     <div class="title">Mira tus resultados</div>
@@ -211,12 +222,37 @@ def init_state():
     st.session_state.order = order
     st.session_state.idx = 0
     st.session_state.responses = []
+    st.session_state.participant_id = uuid.uuid4().hex[:12]
+    st.session_state.shown_at = None
+    st.session_state.sent = False
 
 
 if "order" not in st.session_state:
     init_state()
 if "started" not in st.session_state:
     st.session_state.started = False
+
+
+def get_endpoint():
+    """URL del script de Google que guarda las respuestas (en los secrets de Streamlit)."""
+    try:
+        return st.secrets["SHEET_ENDPOINT"]
+    except Exception:
+        return None
+
+
+def send_responses(responses):
+    """Envía las respuestas a la hoja de cálculo. Devuelve True si se guardaron."""
+    url = get_endpoint()
+    if not url:
+        return False
+    payload = json.dumps({"rows": responses}).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
 
 
 def sdt(responses):
@@ -259,13 +295,19 @@ if not st.session_state.started:
     st.markdown(INTRO_CSS, unsafe_allow_html=True)
     st.markdown(INTRO_HTML, unsafe_allow_html=True)
 
-    agreed = st.checkbox("He leído el aviso y quiero empezar la tarea.")
-    if st.button("Empezar", type="primary", disabled=not agreed):
+    adult = st.checkbox("Tengo 18 años o más.")
+    agreed = st.checkbox(
+        "He leído la información anterior y doy mi consentimiento para participar "
+        "y para que mis respuestas anónimas se usen en esta investigación."
+    )
+    if st.button("Empezar", type="primary", disabled=not (adult and agreed)):
         st.session_state.started = True
         st.rerun()
 
 elif idx < total:
     msg = st.session_state.order[idx]
+    if st.session_state.shown_at is None:
+        st.session_state.shown_at = time.time()
     st.progress(idx / total, text=f"Mensaje {idx + 1} de {total}")
 
     with st.container(border=True):
@@ -285,6 +327,9 @@ elif idx < total:
             st.warning("Elige una acción antes de continuar.")
         else:
             st.session_state.responses.append({
+                "participant_id": st.session_state.participant_id,
+                "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "position": idx + 1,
                 "id": msg["id"],
                 "is_fraud": msg["is_fraud"],
                 "data_source": msg["data_source"],
@@ -292,12 +337,24 @@ elif idx < total:
                 "rating": rating,
                 "action": action,
                 "judged_fraud": rating < THRESHOLD,
+                "rt_seconds": round(time.time() - st.session_state.shown_at, 2),
             })
+            st.session_state.shown_at = None
             st.session_state.idx += 1
             st.rerun()
 
 else:
     responses = st.session_state.responses
+    if not st.session_state.sent:
+        with st.spinner("Guardando tus respuestas..."):
+            st.session_state.sent = send_responses(responses)
+    if st.session_state.sent:
+        st.success("Tus respuestas se han guardado. ¡Gracias por participar!")
+    else:
+        st.warning("No se han podido guardar tus respuestas.")
+        if st.button("Reintentar el envío"):
+            st.rerun()
+
     hr, far, d_prime, c = sdt(responses)
 
     st.subheader("Tus resultados")
@@ -341,7 +398,3 @@ else:
         file_name="respuestas.csv",
         mime="text/csv",
     )
-
-    if st.button("Volver a empezar"):
-        init_state()
-        st.rerun()
