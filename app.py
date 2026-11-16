@@ -8,6 +8,7 @@ legítimo (0-100) y eligen una acción. Al final se resume el rendimiento con
 medidas de la teoría de detección de señales (aciertos, falsas alarmas, d', c).
 """
 
+import html
 import json
 import random
 import time
@@ -47,7 +48,7 @@ PROFILE = {
 MESSAGES = [
     {
         "id": "F1", "is_fraud": True, "data_source": "Dato público", "channel": "Correo electrónico",
-        "sender": "Ana Ferrer, directora regional",
+        "sender": "Ana Ferrer, directora regional", "display": "Ana Ferrer", "subject": "Urgente y confidencial", "time": "9:12",
         "text": "Javier, enhorabuena por ese 1:38 en el medio, impresionante. Necesito que me "
                 "hagas un favor antes de que se haga pública la adquisición: una transferencia "
                 "de 48.000 € a un proveedor nuevo hoy mismo. Que quede entre nosotros hasta el "
@@ -58,7 +59,7 @@ MESSAGES = [
     },
     {
         "id": "F2", "is_fraud": True, "data_source": "Dato público", "channel": "WhatsApp",
-        "sender": "Número desconocido",
+        "sender": "Número desconocido", "display": "+34 611 72 48 39", "alias": "~Marcos", "time": "12:47",
         "text": "Hola Javier, soy Marcos, coincidimos en la mesa de banca digital de Madrid. "
                 "Tengo número nuevo. Un cliente mío es de tu oficina y necesita que le aprueben "
                 "una transferencia urgente antes de las 14:00, ¿me echas un cable?",
@@ -67,7 +68,7 @@ MESSAGES = [
     },
     {
         "id": "F3", "is_fraud": True, "data_source": "Dato público", "channel": "LinkedIn",
-        "sender": "Headhunter de una firma de selección",
+        "sender": "Headhunter de una firma de selección", "display": "Laura Benet", "headline": "Senior Partner · Executive Search", "time": "16:05",
         "text": "¡Otro exalumno de la UV por aquí! Tenemos un puesto directivo confidencial que "
                 "encaja con tu perfil. Entra en nuestro portal de candidatos con tu correo y tu "
                 "contraseña corporativos para ver la oferta.",
@@ -76,7 +77,7 @@ MESSAGES = [
     },
     {
         "id": "F4", "is_fraud": True, "data_source": "Dato público", "channel": "Correo electrónico",
-        "sender": "Equipo de Seguridad Informática",
+        "sender": "Equipo de Seguridad Informática", "display": "Seguridad Informática", "subject": "Verificación obligatoria de cuentas de sucursal", "time": "8:30",
         "text": "Tras las obras de reforma en la oficina de Ruzafa, todas las cuentas de la "
                 "sucursal deben volver a verificarse hoy. Utiliza el enlace de abajo para "
                 "confirmar tu acceso o se suspenderá.",
@@ -85,7 +86,7 @@ MESSAGES = [
     },
     {
         "id": "L1", "is_fraud": False, "data_source": "Dato privado", "channel": "Correo electrónico",
-        "sender": "Ana Ferrer, directora regional",
+        "sender": "Ana Ferrer, directora regional", "display": "Ana Ferrer", "subject": "Informe para la auditoría", "time": "11:20",
         "text": "Hola Javier, de cara a la auditoría de este mes, ¿puedes subir a Gestor el "
                 "informe habitual de la oficina cuando puedas? Sin prisa, con que esté a final "
                 "de semana vale.",
@@ -94,13 +95,13 @@ MESSAGES = [
     },
     {
         "id": "L2", "is_fraud": False, "data_source": "Dato privado", "channel": "WhatsApp",
-        "sender": "Hermana (contacto guardado)",
+        "sender": "Hermana (contacto guardado)", "display": "Hermana", "time": "20:14",
         "text": "¿Vienes el viernes a la función de Lucía? Mamá está guardando sitios.",
         "cues": "Contacto conocido, un dato familiar privado y ninguna petición de dinero ni de accesos.",
     },
     {
         "id": "L3", "is_fraud": False, "data_source": "Dato público", "channel": "Correo electrónico",
-        "sender": "Recursos Humanos, programa de bienestar",
+        "sender": "Recursos Humanos, programa de bienestar", "display": "Recursos Humanos · Bienestar", "subject": "¿Te apuntas al 10K de primavera?", "time": "10:03",
         "text": "Hemos visto tu publicación del medio maratón, ¡enhorabuena! Estamos montando un "
                 "equipo de la plantilla para el 10K de primavera. Responde a este correo si te "
                 "apetece apuntarte.",
@@ -109,7 +110,7 @@ MESSAGES = [
     },
     {
         "id": "L4", "is_fraud": False, "data_source": "Dato público", "channel": "LinkedIn",
-        "sender": "Antiguo compañero de clase",
+        "sender": "Antiguo compañero de clase", "display": "Pablo Soler", "headline": "Product Manager · Fintech", "time": "18:31",
         "text": "¡Javier! Te vi en la mesa de fintech, muy buena charla. Vuelvo a Valencia el "
                 "mes que viene, ¿un café?",
         "cues": "Datos públicos, pero la petición es inofensiva y fácil de comprobar.",
@@ -213,6 +214,89 @@ INTRO_HTML = """
 """
 
 
+
+# ---------------------------------------------------------------------------
+# Interfaces de los mensajes (inspiradas en cada canal, sin logotipos ni marcas)
+# ---------------------------------------------------------------------------
+MOCK_CSS = """
+<style>
+.mk {max-width:440px; margin:0 auto 1rem auto; border-radius:18px; overflow:hidden;
+  box-shadow:0 6px 24px rgba(0,0,0,.25); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
+.mk .av {width:38px; height:38px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-weight:600; font-size:.95rem; flex-shrink:0;}
+/* chat tipo WhatsApp */
+.wa-top {background:#008069; color:#fff; padding:.7rem .9rem; display:flex; align-items:center; gap:.7rem;}
+.wa-top .av {background:#dfe5e7; color:#54656f;}
+.wa-top .nm {font-weight:600; font-size:1rem; line-height:1.2;}
+.wa-top .sub {font-size:.75rem; opacity:.85;}
+.wa-body {background:#efeae2; padding:1rem .8rem 1.3rem .8rem; min-height:150px;}
+.wa-day {text-align:center; margin-bottom:.8rem;}
+.wa-day span {background:#fff; color:#54656f; font-size:.72rem; padding:.2rem .6rem; border-radius:7px;}
+.wa-warn {background:#fdf4c5; color:#54656f; font-size:.75rem; text-align:center;
+  padding:.45rem .6rem; border-radius:8px; margin:0 1rem .8rem 1rem;}
+.wa-bub {background:#fff; color:#111b21; max-width:85%; padding:.45rem .6rem .3rem .6rem;
+  border-radius:0 8px 8px 8px; font-size:.92rem; line-height:1.4; box-shadow:0 1px .5px rgba(0,0,0,.13);}
+.wa-bub .alias {color:#c4532b; font-size:.78rem; font-weight:600; margin-bottom:.15rem;}
+.wa-bub .tm {text-align:right; color:#667781; font-size:.68rem; margin-top:.15rem;}
+/* correo */
+.em {background:#fff; color:#202124;}
+.em-top {background:#f6f8fc; padding:.6rem 1rem; font-size:.8rem; color:#5f6368; border-bottom:1px solid #e0e3e7;}
+.em-subj {font-size:1.15rem; font-weight:500; padding:1rem 1rem .6rem 1rem;}
+.em-from {display:flex; gap:.7rem; align-items:center; padding:0 1rem .8rem 1rem;}
+.em-from .av {background:#1a73e8; color:#fff;}
+.em-from .nm {font-weight:600; font-size:.92rem;}
+.em-from .to {font-size:.78rem; color:#5f6368;}
+.em-from .tm {margin-left:auto; font-size:.75rem; color:#5f6368; align-self:flex-start;}
+.em-body {padding:0 1rem 1.3rem 4.2rem; font-size:.93rem; line-height:1.5;}
+/* mensajería tipo LinkedIn */
+.li {background:#fff; color:#191919;}
+.li-top {padding:.7rem 1rem; border-bottom:1px solid #e8e8e8; display:flex; gap:.7rem; align-items:center;}
+.li-top .av {background:#d0e8ff; color:#0a66c2;}
+.li-top .nm {font-weight:600; font-size:.95rem;}
+.li-top .hd {font-size:.75rem; color:#666;}
+.li-body {padding:1rem;}
+.li-msg {display:flex; gap:.6rem;}
+.li-msg .av {width:32px; height:32px; font-size:.8rem; background:#d0e8ff; color:#0a66c2;}
+.li-msg .nm {font-weight:600; font-size:.85rem;} .li-msg .tm {font-weight:400; color:#666; font-size:.75rem; margin-left:.3rem;}
+.li-msg .tx {font-size:.92rem; line-height:1.45; margin-top:.15rem;}
+.li-input {border-top:1px solid #e8e8e8; padding:.6rem 1rem; color:#999; font-size:.85rem;}
+</style>
+"""
+
+
+def initials(name):
+    parts = [p for p in name.replace("·", " ").split() if p[0].isalpha()]
+    return "".join(p[0] for p in parts[:2]).upper() or "?"
+
+
+def render_message(m):
+    e = html.escape
+    if m["channel"] == "WhatsApp":
+        unknown = m["display"].startswith("+")
+        warn = '<div class="wa-warn">Este número no está en tus contactos.</div>' if unknown else ""
+        alias = f'<div class="alias">{e(m["alias"])}</div>' if m.get("alias") else ""
+        av = '<svg width="22" height="22" viewBox="0 0 24 24" fill="#54656f"><circle cx="12" cy="8" r="4.2"/><path d="M3.5 21c0-4.4 3.8-7.5 8.5-7.5s8.5 3.1 8.5 7.5z"/></svg>' if unknown else initials(m["display"])
+        sub = "toca para ver la info del contacto" if unknown else "en línea"
+        return f"""<div class="mk"><div class="wa-top"><div class="av">{av}</div>
+          <div><div class="nm">{e(m["display"])}</div><div class="sub">{sub}</div></div></div>
+          <div class="wa-body"><div class="wa-day"><span>HOY</span></div>{warn}
+          <div class="wa-bub">{alias}{e(m["text"])}<div class="tm">{m["time"]}</div></div></div></div>"""
+    if m["channel"] == "Correo electrónico":
+        return f"""<div class="mk em"><div class="em-top">Bandeja de entrada</div>
+          <div class="em-subj">{e(m["subject"])}</div>
+          <div class="em-from"><div class="av">{initials(m["display"])}</div>
+          <div><div class="nm">{e(m["display"])}</div><div class="to">para mí</div></div>
+          <div class="tm">{m["time"]}</div></div>
+          <div class="em-body">{e(m["text"])}</div></div>"""
+    # LinkedIn
+    ini = initials(m["display"])
+    return f"""<div class="mk li"><div class="li-top"><div class="av">{ini}</div>
+      <div><div class="nm">{e(m["display"])}</div><div class="hd">{e(m["headline"])}</div></div></div>
+      <div class="li-body"><div class="li-msg"><div class="av">{ini}</div>
+      <div><div class="nm">{e(m["display"])}<span class="tm">{m["time"]}</span></div>
+      <div class="tx">{e(m["text"])}</div></div></div></div>
+      <div class="li-input">Escribe un mensaje...</div></div>"""
+
 # ---------------------------------------------------------------------------
 # Estado de la sesión
 # ---------------------------------------------------------------------------
@@ -310,9 +394,8 @@ elif idx < total:
         st.session_state.shown_at = time.time()
     st.progress(idx / total, text=f"Mensaje {idx + 1} de {total}")
 
-    with st.container(border=True):
-        st.markdown(f"**{msg['channel']}** · de *{msg['sender']}*")
-        st.write(msg["text"])
+    st.caption(f"Javier recibe este mensaje por {msg['channel'].lower() if msg['channel'] == 'Correo electrónico' else msg['channel']}:")
+    st.markdown(MOCK_CSS + render_message(msg), unsafe_allow_html=True)
 
     with st.form(key=f"form_{msg['id']}"):
         rating = st.slider(
