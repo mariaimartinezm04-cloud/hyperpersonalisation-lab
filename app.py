@@ -111,6 +111,85 @@ ACTIONS = ["Proceed as asked", "Verify through another channel", "Report as susp
 THRESHOLD = 50  # ratings below this count as a "fraud" judgement
 
 
+
+# ---------------------------------------------------------------------------
+# Opening screen (legal notice + instructions)
+# ---------------------------------------------------------------------------
+INTRO_CSS = """
+<style>
+.hl-section {margin: 1.6rem 0 0.8rem 0; display:flex; align-items:center; gap:.6rem;}
+.hl-section .num {width:1.9rem; height:1.9rem; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-weight:700; font-size:.95rem;
+  background:#4f6bed; color:#fff;}
+.hl-section h3 {margin:0; padding:0; font-size:1.25rem;}
+.hl-grid {display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:.8rem;}
+.hl-card {border:1px solid rgba(128,128,128,.25); border-radius:14px; padding:1rem 1.1rem;
+  background:rgba(128,128,128,.06); border-left:4px solid #4f6bed;}
+.hl-card .title {font-weight:700; margin-bottom:.3rem; font-size:.98rem;}
+.hl-card .body {font-size:.88rem; opacity:.85; line-height:1.45;}
+.hl-card.wide {grid-column:1/-1;}
+.hl-steps {position:relative; margin-left:.9rem; padding-left:1.6rem;
+  border-left:2px solid rgba(79,107,237,.45);}
+.hl-step {position:relative; margin-bottom:1.1rem;}
+.hl-step:last-child {margin-bottom:0;}
+.hl-step .dot {position:absolute; left:-2.45rem; top:0; width:1.6rem; height:1.6rem;
+  border-radius:50%; background:#4f6bed; color:#fff; font-size:.8rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center;}
+.hl-step .title {font-weight:700; font-size:.98rem;}
+.hl-step .body {font-size:.88rem; opacity:.85; line-height:1.45;}
+.hl-time {display:inline-block; margin-top:1rem; padding:.3rem .8rem; border-radius:999px;
+  background:rgba(79,107,237,.15); font-size:.85rem; font-weight:600;}
+</style>
+"""
+
+INTRO_HTML = """
+<div class="hl-section"><div class="num">1</div><h3>Legal notice</h3></div>
+<div class="hl-grid">
+  <div class="hl-card"><div class="title">Fictional content</div>
+    <div class="body">Javier Ortega, the bank, the senders and every message are invented
+    for teaching and research. Any resemblance to real people or organisations is coincidental.</div></div>
+  <div class="hl-card"><div class="title">Educational demo</div>
+    <div class="body">Not a security tool and not professional, legal or financial advice.
+    If you get a suspicious message in real life, follow your organisation's procedures and
+    verify through an independent channel.</div></div>
+  <div class="hl-card"><div class="title">Your answers stay with you</div>
+    <div class="body">No personal data is requested and nothing is stored or sent. Answers live
+    only in this browser session and vanish when you close the tab, unless you download them.</div></div>
+  <div class="hl-card"><div class="title">Hosting</div>
+    <div class="body">The app runs on Streamlit Community Cloud, which may process technical
+    data such as your IP address under its own privacy notice.</div></div>
+  <div class="hl-card wide"><div class="title">Authorship</div>
+    <div class="body">Research design and content by Mar&iacute;a Mart&iacute;nez Melero.
+    Please do not reuse the stimuli without permission.</div></div>
+</div>
+
+<div class="hl-section"><div class="num">2</div><h3>How it works</h3></div>
+<div class="hl-steps">
+  <div class="hl-step"><div class="dot">1</div>
+    <div class="title">Read the target profile first</div>
+    <div class="body">It is in the column on the left (on a phone, tap the arrow at the top
+    left). It shows what anyone can find about Javier online and what only people close to him
+    know. You can check it at any time.</div></div>
+  <div class="hl-step"><div class="dot">2</div>
+    <div class="title">Eight messages, random order</div>
+    <div class="body">Sent to Javier by email, WhatsApp or LinkedIn. Some are fraudulent,
+    some are legitimate.</div></div>
+  <div class="hl-step"><div class="dot">3</div>
+    <div class="title">Rate and decide</div>
+    <div class="body">Rate how legitimate each message looks from 0 (certainly fraud) to 100
+    (certainly legitimate) and choose what Javier should do.</div></div>
+  <div class="hl-step"><div class="dot">4</div>
+    <div class="title">No going back</div>
+    <div class="body">Once you press <i>Next</i>, that answer is final, so take your time.</div></div>
+  <div class="hl-step"><div class="dot">5</div>
+    <div class="title">See your results</div>
+    <div class="body">How well you told fraud from legitimate messages, your response bias,
+    and the cues hidden in each message.</div></div>
+</div>
+<div class="hl-time">About 5 minutes</div>
+<br><br>
+"""
+
 # ---------------------------------------------------------------------------
 # Session state
 # ---------------------------------------------------------------------------
@@ -165,45 +244,8 @@ total = len(st.session_state.order)
 idx = st.session_state.idx
 
 if not st.session_state.started:
-    st.subheader("Before you start")
-
-    with st.container(border=True):
-        st.markdown("#### 1. Legal notice")
-        st.markdown(
-            "- **Fictional content.** Javier Ortega, the bank, the senders and every message "
-            "are invented for teaching and research purposes. Any resemblance to real people "
-            "or organisations is coincidental.\n"
-            "- **Educational demo, not a security tool.** This task does not assess real "
-            "messages and is not professional security, legal or financial advice. If you "
-            "receive a suspicious message in real life, follow your organisation's procedures "
-            "and verify through an independent channel.\n"
-            "- **Your responses are not collected.** The app asks for no personal data and "
-            "does not store or send your answers anywhere. They exist only in this browser "
-            "session and disappear when you close the tab, unless you choose to download them "
-            "at the end.\n"
-            "- **Hosting.** The app runs on Streamlit Community Cloud, which may process "
-            "technical data (such as your IP address) under its own privacy notice.\n"
-            "- **Authorship.** Research design and content by María Martínez Melero. "
-            "Please do not reuse the stimuli without permission."
-        )
-
-    with st.container(border=True):
-        st.markdown("#### 2. How it works")
-        st.markdown(
-            "1. **Read the target profile first.** It is in the column on the left "
-            "(on a phone, tap the arrow at the top left to open it). It shows what "
-            "anyone can find about Javier online and what only people close to him know. "
-            "You can go back to it at any time.\n"
-            "2. **You will see 8 messages** sent to Javier by email, WhatsApp or LinkedIn, "
-            "in random order. Some are fraudulent and some are legitimate.\n"
-            "3. **For each message**, rate how legitimate it looks from 0 (certainly fraud) "
-            "to 100 (certainly legitimate) and choose what Javier should do.\n"
-            "4. **There is no going back.** Once you press *Next*, that answer is final, "
-            "so take your time.\n"
-            "5. **At the end** you will see how well you told fraud from legitimate "
-            "messages, your response bias and an explanation of the cues in each message.\n\n"
-            "It takes about 5 minutes."
-        )
+    st.markdown(INTRO_CSS, unsafe_allow_html=True)
+    st.markdown(INTRO_HTML, unsafe_allow_html=True)
 
     agreed = st.checkbox("I have read the notice above and want to start the task.")
     if st.button("Start", type="primary", disabled=not agreed):
