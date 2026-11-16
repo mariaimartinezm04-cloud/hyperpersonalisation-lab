@@ -77,7 +77,7 @@ MESSAGES = [
     },
     {
         "id": "F4", "is_fraud": True, "data_source": "Dato público", "channel": "Correo electrónico",
-        "sender": "Equipo de Seguridad Informática", "display": "Seguridad Informática", "subject": "Verificación obligatoria de cuentas de sucursal", "time": "8:30",
+        "sender": "Equipo de Seguridad Informática", "display": "Seguridad Informática", "subject": "Verificación obligatoria de cuentas de sucursal", "time": "8:30", "link": "Verificar mi acceso",
         "text": "Tras las obras de reforma en la oficina de Ruzafa, todas las cuentas de la "
                 "sucursal deben volver a verificarse hoy. Utiliza el enlace de abajo para "
                 "confirmar tu acceso o se suspenderá.",
@@ -248,6 +248,7 @@ MOCK_CSS = """
 .em-from .to {font-size:.78rem; color:#5f6368;}
 .em-from .tm {margin-left:auto; font-size:.75rem; color:#5f6368; align-self:flex-start;}
 .em-body {padding:0 1rem 1.3rem 4.2rem; font-size:.93rem; line-height:1.5;}
+.em-btn {display:inline-block; margin-top:.9rem; background:#1a73e8; color:#fff; padding:.45rem 1rem; border-radius:6px; font-size:.88rem; font-weight:500; cursor:default;}
 /* mensajería tipo LinkedIn */
 .li {background:#fff; color:#191919;}
 .li-top {padding:.7rem 1rem; border-bottom:1px solid #e8e8e8; display:flex; gap:.7rem; align-items:center;}
@@ -282,12 +283,13 @@ def render_message(m):
           <div class="wa-body"><div class="wa-day"><span>HOY</span></div>{warn}
           <div class="wa-bub">{alias}{e(m["text"])}<div class="tm">{m["time"]}</div></div></div></div>"""
     if m["channel"] == "Correo electrónico":
+        btn = f'<br><span class="em-btn">{e(m["link"])}</span>' if m.get("link") else ""
         return f"""<div class="mk em"><div class="em-top">Bandeja de entrada</div>
           <div class="em-subj">{e(m["subject"])}</div>
           <div class="em-from"><div class="av">{initials(m["display"])}</div>
           <div><div class="nm">{e(m["display"])}</div><div class="to">para mí</div></div>
           <div class="tm">{m["time"]}</div></div>
-          <div class="em-body">{e(m["text"])}</div></div>"""
+          <div class="em-body">{e(m["text"])}{btn}</div></div>"""
     # LinkedIn
     ini = initials(m["display"])
     return f"""<div class="mk li"><div class="li-top"><div class="av">{ini}</div>
