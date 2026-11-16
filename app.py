@@ -124,6 +124,8 @@ def init_state():
 
 if "order" not in st.session_state:
     init_state()
+if "started" not in st.session_state:
+    st.session_state.started = False
 
 
 def sdt(responses):
@@ -162,7 +164,53 @@ with st.sidebar:
 total = len(st.session_state.order)
 idx = st.session_state.idx
 
-if idx < total:
+if not st.session_state.started:
+    st.subheader("Before you start")
+
+    with st.container(border=True):
+        st.markdown("#### 1. Legal notice")
+        st.markdown(
+            "- **Fictional content.** Javier Ortega, the bank, the senders and every message "
+            "are invented for teaching and research purposes. Any resemblance to real people "
+            "or organisations is coincidental.\n"
+            "- **Educational demo, not a security tool.** This task does not assess real "
+            "messages and is not professional security, legal or financial advice. If you "
+            "receive a suspicious message in real life, follow your organisation's procedures "
+            "and verify through an independent channel.\n"
+            "- **Your responses are not collected.** The app asks for no personal data and "
+            "does not store or send your answers anywhere. They exist only in this browser "
+            "session and disappear when you close the tab, unless you choose to download them "
+            "at the end.\n"
+            "- **Hosting.** The app runs on Streamlit Community Cloud, which may process "
+            "technical data (such as your IP address) under its own privacy notice.\n"
+            "- **Authorship.** Research design and content by María Martínez Melero. "
+            "Please do not reuse the stimuli without permission."
+        )
+
+    with st.container(border=True):
+        st.markdown("#### 2. How it works")
+        st.markdown(
+            "1. **Read the target profile first.** It is in the column on the left "
+            "(on a phone, tap the arrow at the top left to open it). It shows what "
+            "anyone can find about Javier online and what only people close to him know. "
+            "You can go back to it at any time.\n"
+            "2. **You will see 8 messages** sent to Javier by email, WhatsApp or LinkedIn, "
+            "in random order. Some are fraudulent and some are legitimate.\n"
+            "3. **For each message**, rate how legitimate it looks from 0 (certainly fraud) "
+            "to 100 (certainly legitimate) and choose what Javier should do.\n"
+            "4. **There is no going back.** Once you press *Next*, that answer is final, "
+            "so take your time.\n"
+            "5. **At the end** you will see how well you told fraud from legitimate "
+            "messages, your response bias and an explanation of the cues in each message.\n\n"
+            "It takes about 5 minutes."
+        )
+
+    agreed = st.checkbox("I have read the notice above and want to start the task.")
+    if st.button("Start", type="primary", disabled=not agreed):
+        st.session_state.started = True
+        st.rerun()
+
+elif idx < total:
     msg = st.session_state.order[idx]
     st.progress(idx / total, text=f"Message {idx + 1} of {total}")
 

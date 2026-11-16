@@ -10,6 +10,8 @@ Generative AI makes it cheap to scrape a target's public footprint and weave tho
 
 Participants act as observers of the inbox of a fictional bank branch director in Valencia. His profile is split into details that are **public** (findable online) and **private** (known only to people close to him).
 
+An opening screen sets out the legal notice (fictional content, no data collection, educational use only) and the instructions, and participants must confirm they have read it before starting.
+
 For each of eight messages (email, WhatsApp, LinkedIn) participants:
 
 1. rate how legitimate it looks (0 to 100), and
