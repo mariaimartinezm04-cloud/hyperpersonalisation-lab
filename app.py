@@ -1,11 +1,11 @@
 """
 Hyperpersonalisation Lab
-A small vignette task on AI-hyperpersonalised executive fraud.
+Tarea de viñetas sobre fraude ejecutivo hiperpersonalizado mediante IA.
 
-Participants act as observers of the messages received by a fictional bank
-branch director in Valencia. For each message they rate how legitimate it
-looks (0-100) and choose an action. At the end, performance is summarised
-with signal detection measures (hit rate, false alarm rate, d', criterion c).
+Los participantes observan los mensajes que recibe un director de sucursal
+bancaria ficticio en Valencia. Para cada mensaje puntúan cuánto les parece
+legítimo (0-100) y eligen una acción. Al final se resume el rendimiento con
+medidas de la teoría de detección de señales (aciertos, falsas alarmas, d', c).
 """
 
 import random
@@ -17,103 +17,106 @@ import streamlit as st
 st.set_page_config(page_title="Hyperpersonalisation Lab", layout="centered")
 
 # ---------------------------------------------------------------------------
-# Fictional target profile
+# Perfil ficticio
 # ---------------------------------------------------------------------------
 PROFILE = {
     "name": "Javier Ortega",
-    "role": "Branch Director, fictional bank, Valencia (Ruzafa branch)",
+    "role": "Director de sucursal de un banco ficticio en Valencia (oficina de Ruzafa)",
     "public": [
-        "Finished the Valencia Half Marathon in 1:38 (posted on Instagram)",
-        "Spoke on a panel about digital banking at a fintech event in Madrid (LinkedIn)",
-        "Studied Business at the Universitat de València (LinkedIn)",
-        "Local news article about the renovation of his branch",
+        "Terminó el Medio Maratón de Valencia en 1:38 (lo publicó en Instagram)",
+        "Participó en una mesa redonda sobre banca digital en un evento fintech en Madrid (LinkedIn)",
+        "Estudió Administración y Dirección de Empresas en la Universitat de València (LinkedIn)",
+        "Noticia en la prensa local sobre la reforma de su oficina",
     ],
     "private": [
-        "His daughter Lucía has a school play next Friday",
-        "An internal audit of his branch is scheduled for this month",
-        "His usual internal reporting portal is called 'Gestor'",
+        "Su hija Lucía tiene una función del colegio el próximo viernes",
+        "Este mes hay una auditoría interna programada en su oficina",
+        "La plataforma interna donde sube los informes se llama «Gestor»",
     ],
 }
 
 # ---------------------------------------------------------------------------
-# Stimuli. is_fraud: True = fraudulent. data_source: which kind of personal
-# detail the message uses (public = findable online, private = not online).
+# Estímulos. is_fraud: True = fraudulento. data_source: tipo de dato personal
+# que usa el mensaje (público = se encuentra en internet, privado = no).
 # ---------------------------------------------------------------------------
 MESSAGES = [
     {
-        "id": "F1", "is_fraud": True, "data_source": "public", "channel": "Email",
-        "sender": "Ana Ferrer, Regional Director",
-        "text": "Javier, congrats on the 1:38 in the half, impressive. I need a favour "
-                "before the acquisition goes public: a transfer of €48,000 to a new "
-                "supplier today. Keep it between us until Monday, I'm in meetings all day.",
-        "cues": "Urgency, secrecy and an unusual payment request. The personal detail "
-                "(race time) is public on Instagram, so it proves nothing about the sender.",
+        "id": "F1", "is_fraud": True, "data_source": "Dato público", "channel": "Correo electrónico",
+        "sender": "Ana Ferrer, directora regional",
+        "text": "Javier, enhorabuena por ese 1:38 en el medio, impresionante. Necesito que me "
+                "hagas un favor antes de que se haga pública la adquisición: una transferencia "
+                "de 48.000 € a un proveedor nuevo hoy mismo. Que quede entre nosotros hasta el "
+                "lunes, estoy todo el día reunida.",
+        "cues": "Urgencia, secreto y una petición de pago fuera de lo normal. El dato personal "
+                "(el tiempo en la carrera) está publicado en Instagram, así que no demuestra "
+                "nada sobre quién envía el mensaje.",
     },
     {
-        "id": "F2", "is_fraud": True, "data_source": "public", "channel": "WhatsApp",
-        "sender": "Unknown number",
-        "text": "Hi Javier, it's Marcos, we met at the digital banking panel in Madrid. "
-                "New phone. One of my clients banks with you and needs an urgent wire "
-                "approved before 2pm, can you help me out?",
-        "cues": "New number plus a favour that bypasses procedure. The panel is listed "
-                "on LinkedIn, so anyone could reference it.",
+        "id": "F2", "is_fraud": True, "data_source": "Dato público", "channel": "WhatsApp",
+        "sender": "Número desconocido",
+        "text": "Hola Javier, soy Marcos, coincidimos en la mesa de banca digital de Madrid. "
+                "Tengo número nuevo. Un cliente mío es de tu oficina y necesita que le aprueben "
+                "una transferencia urgente antes de las 14:00, ¿me echas un cable?",
+        "cues": "Número nuevo y un favor que se salta el procedimiento. La mesa redonda aparece "
+                "en LinkedIn, cualquiera podría mencionarla.",
     },
     {
-        "id": "F3", "is_fraud": True, "data_source": "public", "channel": "LinkedIn",
-        "sender": "Recruiter, executive search firm",
-        "text": "Fellow UV alumnus here. We have a confidential senior role that fits "
-                "your profile. Please log in to our candidate portal with your corporate "
-                "email and password to see the offer.",
-        "cues": "Asks for corporate credentials. Shared university is public on LinkedIn "
-                "and is used to build false familiarity.",
+        "id": "F3", "is_fraud": True, "data_source": "Dato público", "channel": "LinkedIn",
+        "sender": "Headhunter de una firma de selección",
+        "text": "¡Otro exalumno de la UV por aquí! Tenemos un puesto directivo confidencial que "
+                "encaja con tu perfil. Entra en nuestro portal de candidatos con tu correo y tu "
+                "contraseña corporativos para ver la oferta.",
+        "cues": "Pide las credenciales corporativas. La universidad compartida es pública en "
+                "LinkedIn y se usa para crear una falsa familiaridad.",
     },
     {
-        "id": "F4", "is_fraud": True, "data_source": "public", "channel": "Email",
-        "sender": "IT Security Team",
-        "text": "Following the renovation works at the Ruzafa branch, all branch "
-                "accounts must be re-verified today. Use the link below to confirm "
-                "your access or it will be suspended.",
-        "cues": "Threat of suspension and an external link. The renovation was in the "
-                "local press, so it lends false credibility.",
+        "id": "F4", "is_fraud": True, "data_source": "Dato público", "channel": "Correo electrónico",
+        "sender": "Equipo de Seguridad Informática",
+        "text": "Tras las obras de reforma en la oficina de Ruzafa, todas las cuentas de la "
+                "sucursal deben volver a verificarse hoy. Utiliza el enlace de abajo para "
+                "confirmar tu acceso o se suspenderá.",
+        "cues": "Amenaza de suspensión y un enlace externo. La reforma salió en la prensa local, "
+                "por eso da una credibilidad falsa.",
     },
     {
-        "id": "L1", "is_fraud": False, "data_source": "private", "channel": "Email",
-        "sender": "Ana Ferrer, Regional Director",
-        "text": "Hi Javier, ahead of this month's audit could you upload the usual "
-                "branch report to Gestor when you get a chance? No rush, end of week is fine.",
-        "cues": "Uses private details (the audit, the internal portal name), follows the "
-                "normal channel and has no time pressure.",
+        "id": "L1", "is_fraud": False, "data_source": "Dato privado", "channel": "Correo electrónico",
+        "sender": "Ana Ferrer, directora regional",
+        "text": "Hola Javier, de cara a la auditoría de este mes, ¿puedes subir a Gestor el "
+                "informe habitual de la oficina cuando puedas? Sin prisa, con que esté a final "
+                "de semana vale.",
+        "cues": "Usa datos privados (la auditoría, el nombre de la plataforma interna), sigue el "
+                "canal habitual y no mete presión de tiempo.",
     },
     {
-        "id": "L2", "is_fraud": False, "data_source": "private", "channel": "WhatsApp",
-        "sender": "Sister (saved contact)",
-        "text": "Are you coming to Lucía's play on Friday? Mum is saving seats.",
-        "cues": "Known contact, private family detail, no request involving money or access.",
+        "id": "L2", "is_fraud": False, "data_source": "Dato privado", "channel": "WhatsApp",
+        "sender": "Hermana (contacto guardado)",
+        "text": "¿Vienes el viernes a la función de Lucía? Mamá está guardando sitios.",
+        "cues": "Contacto conocido, un dato familiar privado y ninguna petición de dinero ni de accesos.",
     },
     {
-        "id": "L3", "is_fraud": False, "data_source": "public", "channel": "Email",
-        "sender": "HR, Wellbeing Programme",
-        "text": "We saw your half marathon post, well done! We're putting together a "
-                "staff team for the 10K in spring. Reply to this email if you're interested.",
-        "cues": "Uses a public detail but asks for nothing sensitive and has no urgency. "
-                "Public data alone does not make a message fraudulent.",
+        "id": "L3", "is_fraud": False, "data_source": "Dato público", "channel": "Correo electrónico",
+        "sender": "Recursos Humanos, programa de bienestar",
+        "text": "Hemos visto tu publicación del medio maratón, ¡enhorabuena! Estamos montando un "
+                "equipo de la plantilla para el 10K de primavera. Responde a este correo si te "
+                "apetece apuntarte.",
+        "cues": "Usa un dato público, pero no pide nada sensible ni tiene urgencia. Que un "
+                "mensaje use datos públicos no lo convierte en fraude.",
     },
     {
-        "id": "L4", "is_fraud": False, "data_source": "public", "channel": "LinkedIn",
-        "sender": "Former classmate",
-        "text": "Javier! Saw you on the fintech panel, great talk. I'm back in Valencia "
-                "next month, coffee?",
-        "cues": "Public details, but the request is harmless and easy to verify.",
+        "id": "L4", "is_fraud": False, "data_source": "Dato público", "channel": "LinkedIn",
+        "sender": "Antiguo compañero de clase",
+        "text": "¡Javier! Te vi en la mesa de fintech, muy buena charla. Vuelvo a Valencia el "
+                "mes que viene, ¿un café?",
+        "cues": "Datos públicos, pero la petición es inofensiva y fácil de comprobar.",
     },
 ]
 
-ACTIONS = ["Proceed as asked", "Verify through another channel", "Report as suspicious"]
-THRESHOLD = 50  # ratings below this count as a "fraud" judgement
-
+ACTIONS = ["Hacer lo que le piden", "Verificarlo por otro canal", "Marcarlo como sospechoso"]
+THRESHOLD = 50  # por debajo de este valor se cuenta como juicio de «fraude»
 
 
 # ---------------------------------------------------------------------------
-# Opening screen (legal notice + instructions)
+# Pantalla inicial (aviso legal + instrucciones)
 # ---------------------------------------------------------------------------
 INTRO_CSS = """
 <style>
@@ -143,55 +146,64 @@ INTRO_CSS = """
 """
 
 INTRO_HTML = """
-<div class="hl-section"><div class="num">1</div><h3>Legal notice</h3></div>
+<div class="hl-section"><div class="num">1</div><h3>Aviso legal</h3></div>
 <div class="hl-grid">
-  <div class="hl-card"><div class="title">Fictional content</div>
-    <div class="body">Javier Ortega, the bank, the senders and every message are invented
-    for teaching and research. Any resemblance to real people or organisations is coincidental.</div></div>
-  <div class="hl-card"><div class="title">Educational demo</div>
-    <div class="body">Not a security tool and not professional, legal or financial advice.
-    If you get a suspicious message in real life, follow your organisation's procedures and
-    verify through an independent channel.</div></div>
-  <div class="hl-card"><div class="title">Your answers stay with you</div>
-    <div class="body">No personal data is requested and nothing is stored or sent. Answers live
-    only in this browser session and vanish when you close the tab, unless you download them.</div></div>
-  <div class="hl-card"><div class="title">Hosting</div>
-    <div class="body">The app runs on Streamlit Community Cloud, which may process technical
-    data such as your IP address under its own privacy notice.</div></div>
-  <div class="hl-card wide"><div class="title">Authorship</div>
-    <div class="body">Research design and content by Mar&iacute;a Mart&iacute;nez Melero.
-    Please do not reuse the stimuli without permission.</div></div>
+  <div class="hl-card">
+    <div class="title">Contenido ficticio</div>
+    <div class="body">Javier Ortega, el banco, los remitentes y todos los mensajes son inventados
+    con fines docentes y de investigación. Cualquier parecido con personas u organizaciones
+    reales es pura coincidencia.</div></div>
+  <div class="hl-card">
+    <div class="title">Demostración educativa</div>
+    <div class="body">No es una herramienta de seguridad ni constituye asesoramiento profesional,
+    jurídico o financiero. Si recibes un mensaje sospechoso en la vida real, sigue los
+    procedimientos de tu organización y verifícalo por un canal independiente.</div></div>
+  <div class="hl-card">
+    <div class="title">Tus respuestas no salen de aquí</div>
+    <div class="body">No se te pide ningún dato personal y no se guarda ni se envía nada. Las
+    respuestas solo existen en esta sesión del navegador y desaparecen al cerrar la pestaña,
+    salvo que decidas descargarlas al final.</div></div>
+  <div class="hl-card">
+    <div class="title">Alojamiento</div>
+    <div class="body">La aplicación funciona en Streamlit Community Cloud, que puede tratar datos
+    técnicos como tu dirección IP conforme a su propia política de privacidad.</div></div>
+  <div class="hl-card wide">
+    <div class="title">Autoría</div>
+    <div class="body">Diseño de la investigación y contenidos de Mar&iacute;a Mart&iacute;nez Melero.
+    No se permite reutilizar los estímulos sin autorización.</div></div>
 </div>
 
-<div class="hl-section"><div class="num">2</div><h3>How it works</h3></div>
+<div class="hl-section"><div class="num">2</div><h3>Cómo funciona</h3></div>
 <div class="hl-steps">
   <div class="hl-step"><div class="dot">1</div>
-    <div class="title">Read the target profile first</div>
-    <div class="body">It is in the column on the left (on a phone, tap the arrow at the top
-    left). It shows what anyone can find about Javier online and what only people close to him
-    know. You can check it at any time.</div></div>
+    <div class="title">Lee primero el perfil</div>
+    <div class="body">Está en la columna de la izquierda (en el móvil, pulsa la flecha de arriba
+    a la izquierda). Muestra lo que cualquiera puede encontrar sobre Javier en internet y lo que
+    solo sabe su gente cercana. Puedes volver a consultarlo cuando quieras.</div></div>
   <div class="hl-step"><div class="dot">2</div>
-    <div class="title">Eight messages, random order</div>
-    <div class="body">Sent to Javier by email, WhatsApp or LinkedIn. Some are fraudulent,
-    some are legitimate.</div></div>
+    <div class="title">Ocho mensajes en orden aleatorio</div>
+    <div class="body">Le llegan a Javier por correo, WhatsApp o LinkedIn. Algunos son
+    fraudulentos y otros legítimos.</div></div>
   <div class="hl-step"><div class="dot">3</div>
-    <div class="title">Rate and decide</div>
-    <div class="body">Rate how legitimate each message looks from 0 (certainly fraud) to 100
-    (certainly legitimate) and choose what Javier should do.</div></div>
+    <div class="title">Puntúa y decide</div>
+    <div class="body">Indica cuánto te parece legítimo cada mensaje, de 0 (seguro que es fraude)
+    a 100 (seguro que es legítimo), y elige qué debería hacer Javier.</div></div>
   <div class="hl-step"><div class="dot">4</div>
-    <div class="title">No going back</div>
-    <div class="body">Once you press <i>Next</i>, that answer is final, so take your time.</div></div>
+    <div class="title">No se puede volver atrás</div>
+    <div class="body">Cuando pulses <i>Siguiente</i>, esa respuesta queda guardada, así que
+    tómate tu tiempo.</div></div>
   <div class="hl-step"><div class="dot">5</div>
-    <div class="title">See your results</div>
-    <div class="body">How well you told fraud from legitimate messages, your response bias,
-    and the cues hidden in each message.</div></div>
+    <div class="title">Mira tus resultados</div>
+    <div class="body">Verás lo bien que has distinguido los fraudes de los mensajes legítimos,
+    tu tendencia de respuesta y las señales que escondía cada mensaje.</div></div>
 </div>
-<div class="hl-time">About 5 minutes</div>
+<div class="hl-time">Unos 5 minutos</div>
 <br><br>
 """
 
+
 # ---------------------------------------------------------------------------
-# Session state
+# Estado de la sesión
 # ---------------------------------------------------------------------------
 def init_state():
     order = MESSAGES.copy()
@@ -208,7 +220,7 @@ if "started" not in st.session_state:
 
 
 def sdt(responses):
-    """Hit rate, false alarm rate, d' and c with the log-linear correction."""
+    """Tasa de aciertos, de falsas alarmas, d' y c con corrección log-lineal."""
     frauds = [r for r in responses if r["is_fraud"]]
     legits = [r for r in responses if not r["is_fraud"]]
     hits = sum(r["judged_fraud"] for r in frauds)
@@ -222,21 +234,21 @@ def sdt(responses):
 
 
 # ---------------------------------------------------------------------------
-# Layout
+# Interfaz
 # ---------------------------------------------------------------------------
 st.title("Hyperpersonalisation Lab")
 st.caption(
-    "A vignette task on AI-hyperpersonalised executive fraud. "
-    "All people, companies and messages are fictional."
+    "Una tarea de viñetas sobre fraude ejecutivo hiperpersonalizado con IA. "
+    "Todas las personas, empresas y mensajes son ficticios."
 )
 
 with st.sidebar:
-    st.subheader("Target profile")
+    st.subheader("Perfil de Javier")
     st.markdown(f"**{PROFILE['name']}**  \n{PROFILE['role']}")
-    st.markdown("**Publicly available online**")
+    st.markdown("**Público (se encuentra en internet)**")
     for item in PROFILE["public"]:
         st.markdown(f"- {item}")
-    st.markdown("**Private (not online)**")
+    st.markdown("**Privado (no está en internet)**")
     for item in PROFILE["private"]:
         st.markdown(f"- {item}")
 
@@ -247,30 +259,30 @@ if not st.session_state.started:
     st.markdown(INTRO_CSS, unsafe_allow_html=True)
     st.markdown(INTRO_HTML, unsafe_allow_html=True)
 
-    agreed = st.checkbox("I have read the notice above and want to start the task.")
-    if st.button("Start", type="primary", disabled=not agreed):
+    agreed = st.checkbox("He leído el aviso y quiero empezar la tarea.")
+    if st.button("Empezar", type="primary", disabled=not agreed):
         st.session_state.started = True
         st.rerun()
 
 elif idx < total:
     msg = st.session_state.order[idx]
-    st.progress(idx / total, text=f"Message {idx + 1} of {total}")
+    st.progress(idx / total, text=f"Mensaje {idx + 1} de {total}")
 
     with st.container(border=True):
-        st.markdown(f"**{msg['channel']}** · from *{msg['sender']}*")
+        st.markdown(f"**{msg['channel']}** · de *{msg['sender']}*")
         st.write(msg["text"])
 
     with st.form(key=f"form_{msg['id']}"):
         rating = st.slider(
-            "How legitimate does this message look? (0 = certainly fraud, 100 = certainly legitimate)",
+            "¿Cuánto te parece legítimo este mensaje? (0 = seguro que es fraude, 100 = seguro que es legítimo)",
             0, 100, 50,
         )
-        action = st.radio("What should Javier do?", ACTIONS, index=None)
-        submitted = st.form_submit_button("Next")
+        action = st.radio("¿Qué debería hacer Javier?", ACTIONS, index=None)
+        submitted = st.form_submit_button("Siguiente")
 
     if submitted:
         if action is None:
-            st.warning("Please choose an action before continuing.")
+            st.warning("Elige una acción antes de continuar.")
         else:
             st.session_state.responses.append({
                 "id": msg["id"],
@@ -288,48 +300,48 @@ else:
     responses = st.session_state.responses
     hr, far, d_prime, c = sdt(responses)
 
-    st.subheader("Your results")
+    st.subheader("Tus resultados")
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Frauds caught", f"{hr:.0%}")
-    col2.metric("False alarms", f"{far:.0%}")
-    col3.metric("d'", f"{d_prime:.2f}")
-    col4.metric("Criterion c", f"{c:.2f}")
+    col1.metric("Fraudes detectados", f"{hr:.0%}")
+    col2.metric("Falsas alarmas", f"{far:.0%}")
+    col3.metric("d'", f"{d_prime:.2f}".replace(".", ","))
+    col4.metric("Criterio c", f"{c:.2f}".replace(".", ","))
 
     st.markdown(
-        "**d'** measures how well you told fraud from legitimate messages "
-        "(0 = chance, higher = better). **c** shows your bias: negative means you "
-        "tended to call messages fraud, positive means you tended to trust them."
+        "**d'** mide lo bien que has distinguido los fraudes de los mensajes legítimos "
+        "(0 = como lanzar una moneda, cuanto más alto, mejor). **c** muestra tu tendencia: "
+        "si es negativo, tiendes a ver fraude en todo; si es positivo, tiendes a fiarte."
     )
 
     df = pd.DataFrame(responses)
-    df["type"] = df["is_fraud"].map({True: "Fraud", False: "Legitimate"})
+    df["Tipo"] = df["is_fraud"].map({True: "Fraude", False: "Legítimo"})
 
-    st.subheader("Mean legitimacy rating")
-    means = df.groupby(["type", "data_source"])["rating"].mean().unstack()
+    st.subheader("Legitimidad media que has dado")
+    means = df.groupby(["Tipo", "data_source"])["rating"].mean().unstack()
     st.bar_chart(means)
     st.caption(
-        "The key question: do public personal details make fraudulent messages "
-        "look as trustworthy as legitimate ones?"
+        "La pregunta clave: ¿hacen los datos personales públicos que un fraude parezca "
+        "tan fiable como un mensaje legítimo?"
     )
 
-    st.subheader("Message by message")
+    st.subheader("Mensaje a mensaje")
     lookup = {m["id"]: m for m in MESSAGES}
     for r in responses:
         m = lookup[r["id"]]
         correct = r["judged_fraud"] == r["is_fraud"]
-        label = "Fraud" if m["is_fraud"] else "Legitimate"
-        mark = "Correct" if correct else "Missed"
-        with st.expander(f"{mark} · {m['channel']} from {m['sender']} · {label} · you rated {r['rating']}"):
+        label = "Fraude" if m["is_fraud"] else "Legítimo"
+        mark = "Acierto" if correct else "Fallo"
+        with st.expander(f"{mark} · {m['channel']} de {m['sender']} · {label} · le diste {r['rating']}"):
             st.write(m["text"])
             st.info(m["cues"])
 
     st.download_button(
-        "Download your responses (CSV)",
-        df.drop(columns=["type"]).to_csv(index=False).encode("utf-8"),
-        file_name="responses.csv",
+        "Descargar tus respuestas (CSV)",
+        df.drop(columns=["Tipo"]).to_csv(index=False).encode("utf-8"),
+        file_name="respuestas.csv",
         mime="text/csv",
     )
 
-    if st.button("Start again"):
+    if st.button("Volver a empezar"):
         init_state()
         st.rerun()
